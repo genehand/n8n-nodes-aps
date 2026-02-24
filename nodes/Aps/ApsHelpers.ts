@@ -65,34 +65,44 @@ export function createModelDerivativeClient(accessToken: string): ModelDerivativ
 /**
  * Simplify JSON:API entity by flattening attributes into the main object
  * Transforms { id, type, attributes: { ... } } to { id, type, href, ...attributes }
+ * Also handles plain objects (like OSS API responses) by returning them as-is
  */
 export function simplifyJsonApiEntity(
 	entity: JsonApiEntity | null,
 ): Record<string, unknown> | null {
 	if (!entity) return null;
 
-	const { id, type, attributes, links } = entity;
+	const { id, type, attributes, links, ...rest } = entity;
 	const simplified: Record<string, unknown> = {};
 
-	if (id !== undefined) simplified.id = id;
-	if (type !== undefined) simplified.type = type;
+	// Check if this is a JSON:API formatted entity
+	const isJsonApiFormat = id !== undefined || type !== undefined || attributes !== undefined;
 
-	// Extract href from links
-	let href: string | undefined;
-	if (links?.self) {
-		if (typeof links.self === 'string') {
-			href = links.self;
-		} else if (typeof links.self === 'object' && 'href' in links.self) {
-			href = links.self.href;
+	if (isJsonApiFormat) {
+		// Handle JSON:API format
+		if (id !== undefined) simplified.id = id;
+		if (type !== undefined) simplified.type = type;
+
+		// Extract href from links
+		let href: string | undefined;
+		if (links?.self) {
+			if (typeof links.self === 'string') {
+				href = links.self;
+			} else if (typeof links.self === 'object' && 'href' in links.self) {
+				href = links.self.href;
+			}
 		}
-	}
-	if (!href && links?.href) {
-		href = links.href;
-	}
-	if (href !== undefined) simplified.href = href;
+		if (!href && links?.href) {
+			href = links.href;
+		}
+		if (href !== undefined) simplified.href = href;
 
-	if (attributes && typeof attributes === 'object') {
-		Object.assign(simplified, attributes);
+		if (attributes && typeof attributes === 'object') {
+			Object.assign(simplified, attributes);
+		}
+	} else {
+		// Handle plain objects (like OSS API responses)
+		Object.assign(simplified, rest);
 	}
 
 	return simplified;
@@ -104,7 +114,7 @@ export function simplifyJsonApiEntity(
 export function simplifyJsonApiResponse(response: JsonApiResponse | unknown): unknown {
 	if (!response || typeof response !== 'object') return response;
 
-	const typedResponse = response as JsonApiResponse;
+	const typedResponse = response as JsonApiResponse & { items?: JsonApiEntity[] };
 
 	// Handle data array
 	if (typedResponse.data && Array.isArray(typedResponse.data)) {
@@ -119,6 +129,14 @@ export function simplifyJsonApiResponse(response: JsonApiResponse | unknown): un
 		return {
 			...typedResponse,
 			data: simplifyJsonApiEntity(typedResponse.data),
+		};
+	}
+
+	// Handle OSS API format with items array
+	if (typedResponse.items && Array.isArray(typedResponse.items)) {
+		return {
+			...typedResponse,
+			items: typedResponse.items.map((item) => simplifyJsonApiEntity(item)),
 		};
 	}
 
@@ -157,10 +175,14 @@ export function handlePaginatedResponse(
 
 	// If we have a wrapped response with data array, extract just the data
 	if (processed && typeof processed === 'object') {
-		const typedProcessed = processed as JsonApiResponse;
+		const typedProcessed = processed as JsonApiResponse & { items?: unknown[] };
 		if (typedProcessed.data && Array.isArray(typedProcessed.data)) {
 			// Always return just the data array (flattened), not the wrapper
 			return typedProcessed.data as IDataObject[];
+		}
+		// Handle OSS API format with items array
+		if (typedProcessed.items && Array.isArray(typedProcessed.items)) {
+			return typedProcessed.items as IDataObject[];
 		}
 	}
 

@@ -142,49 +142,6 @@ throw new NodeOperationError(
 );
 ```
 
-## Node Architecture
-
-Each node implements `INodeType`:
-
-```typescript
-export class NodeName implements INodeType {
-	description: INodeTypeDescription = {
-		displayName: 'Display Name',
-		name: 'nodeName',
-		icon: 'file:aps.svg',
-		group: ['transform'],
-		version: 1,
-		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
-		description: 'Node description',
-		defaults: { name: 'Node Name' },
-		inputs: ['main'],
-		outputs: ['main'],
-		credentials: [{ name: 'credentialName', required: true }],
-		properties: [
-			/* parameter definitions */
-		],
-		usableAsTool: true,
-	};
-
-	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
-		// Implementation
-	}
-}
-```
-
-## Project Structure
-
-```
-credentials/          # Credential definitions (OAuth2 configs)
-nodes/
-  Aps/               # Shared helpers and icons
-    ApsHelpers.ts    # SDK client factories, auth helpers
-  ApsDataManagement/ # Data Management node
-  ApsOss/            # Object Storage node
-  ApsModelDerivative/# Model Derivative node
-dist/                # Compiled output (gitignored)
-```
-
 ## Key Dependencies
 
 - `@aps_sdk/autodesk-sdkmanager` - SDK manager for APS
