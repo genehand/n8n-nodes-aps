@@ -1,0 +1,18 @@
+{
+	"node": "n8n-nodes-aps.ApsDataManagement",
+	"nodeVersion": "1.0",
+	"codexVersion": "1.0",
+	"categories": ["Development", "Data & Storage", "Productivity"],
+	"resources": {
+		"credentialDocumentation": [
+			{
+				"url": "https://aps.autodesk.com/en/docs/oauth/v2/developers_guide/overview/"
+			}
+		],
+		"primaryDocumentation": [
+			{
+				"url": "https://aps.autodesk.com/en/docs/data/v2/developers_guide/overview/"
+			}
+		]
+	}
+}

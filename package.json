@@ -1,0 +1,50 @@
+{
+  "name": "n8n-nodes-aps",
+  "version": "0.1.0",
+  "description": "n8n community nodes for Autodesk Platform Services (APS) - Data Management, OSS, and Model Derivative APIs",
+  "license": "MIT",
+  "homepage": "https://github.com/geneh/n8n-nodes-aps",
+  "keywords": ["n8n-community-node-package", "autodesk", "aps", "bim", "cad"],
+  "author": { "name": "Gene Hand", "email": "gene.hand@gmail.com" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/geneh/n8n-nodes-aps.git"
+  },
+  "scripts": {
+    "build": "n8n-node build",
+    "build:watch": "tsc --watch",
+    "dev": "n8n-node dev",
+    "lint": "n8n-node lint",
+    "lint:fix": "n8n-node lint --fix",
+    "release": "n8n-node release",
+    "prepublishOnly": "n8n-node prerelease"
+  },
+  "files": ["dist"],
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "strict": false,
+    "credentials": [
+      "dist/credentials/ApsOAuth2Api.credentials.js",
+      "dist/credentials/ApsClientCredentialsOAuth2Api.credentials.js"
+    ],
+    "nodes": [
+      "dist/nodes/ApsDataManagement/ApsDataManagement.node.js",
+      "dist/nodes/ApsOss/ApsOss.node.js",
+      "dist/nodes/ApsModelDerivative/ApsModelDerivative.node.js"
+    ]
+  },
+  "devDependencies": {
+    "@n8n/node-cli": "*",
+    "eslint": "9.32.0",
+    "prettier": "3.6.2",
+    "release-it": "^19.0.4",
+    "typescript": "5.9.2"
+  },
+  "peerDependencies": { "n8n-workflow": "*" },
+  "dependencies": {
+    "@aps_sdk/autodesk-sdkmanager": "^1.0.0",
+    "@aps_sdk/data-management": "^1.1.4",
+    "@aps_sdk/model-derivative": "^1.2.1",
+    "@aps_sdk/oss": "^1.3.3"
+  }
+}

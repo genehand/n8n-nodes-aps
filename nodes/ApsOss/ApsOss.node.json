@@ -1,0 +1,18 @@
+{
+	"node": "n8n-nodes-aps.ApsOss",
+	"nodeVersion": "1.0",
+	"codexVersion": "1.0",
+	"categories": ["Development", "Data & Storage"],
+	"resources": {
+		"credentialDocumentation": [
+			{
+				"url": "https://aps.autodesk.com/en/docs/oauth/v2/developers_guide/overview/"
+			}
+		],
+		"primaryDocumentation": [
+			{
+				"url": "https://aps.autodesk.com/en/docs/oss/v2/developers_guide/overview/"
+			}
+		]
+	}
+}
