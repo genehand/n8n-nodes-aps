@@ -402,16 +402,8 @@ export class ApsOss implements INodeType {
 							);
 						}
 
-						const binaryData = item.binary[binaryPropertyName];
-
-						// Convert binary data to Buffer
-						let fileBuffer: Buffer;
-						if (binaryData.data) {
-							// n8n binary data format
-							fileBuffer = Buffer.from(binaryData.data, 'base64');
-						} else {
-							fileBuffer = binaryData as unknown as Buffer;
-						}
+						// Get binary data as Buffer using n8n's helper method
+						const fileBuffer = await this.helpers.getBinaryDataBuffer(i, binaryPropertyName);
 
 						responseData = await client.uploadObject(bucketKey, objectKey, fileBuffer);
 					} else if (operation === 'download') {
