@@ -12,7 +12,7 @@ import {
 
 export class ApsDataManagement implements INodeType {
 	description: INodeTypeDescription = {
-		displayName: 'APS Data Management',
+		displayName: 'Autodesk APS - Data Management',
 		name: 'apsDataManagement',
 		icon: 'file:aps.svg',
 		group: ['transform'],
@@ -378,7 +378,7 @@ export class ApsDataManagement implements INodeType {
 		const simplify = this.getNodeParameter('simplify', 0, true) as boolean;
 		const splitIntoItems = this.getNodeParameter('splitIntoItems', 0, false) as boolean;
 
-		const accessToken = await getAccessToken(this, 'ApsOAuth2Api');
+		const accessToken = await getAccessToken(this, 'apsOAuth2Api');
 		const client = createDataManagementClient(accessToken);
 
 		for (let i = 0; i < items.length; i++) {

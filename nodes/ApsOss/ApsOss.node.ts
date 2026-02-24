@@ -10,7 +10,7 @@ import { Region } from '@aps_sdk/oss';
 
 export class ApsOss implements INodeType {
 	description: INodeTypeDescription = {
-		displayName: 'APS OSS',
+		displayName: 'Autodesk APS - OSS',
 		name: 'apsOss',
 		icon: 'file:aps.svg',
 		group: ['transform'],

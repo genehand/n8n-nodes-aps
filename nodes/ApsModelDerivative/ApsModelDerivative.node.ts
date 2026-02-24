@@ -13,7 +13,7 @@ import { Region } from '@aps_sdk/model-derivative';
 
 export class ApsModelDerivative implements INodeType {
 	description: INodeTypeDescription = {
-		displayName: 'APS Model Derivative',
+		displayName: 'Autodesk APS - Model Derivative',
 		name: 'apsModelDerivative',
 		icon: 'file:aps.svg',
 		group: ['transform'],
