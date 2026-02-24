@@ -109,7 +109,7 @@ export class ApsOss implements INodeType {
 					{
 						name: 'Download',
 						value: 'download',
-						action: 'Download an object using signed URL',
+						action: 'Download an object',
 					},
 					{
 						name: 'Get',
@@ -124,7 +124,7 @@ export class ApsOss implements INodeType {
 					{
 						name: 'Upload',
 						value: 'upload',
-						action: 'Upload an object using signed URL',
+						action: 'Upload an object',
 					},
 				],
 				default: 'copy',
@@ -413,28 +413,18 @@ export class ApsOss implements INodeType {
 							fileBuffer = binaryData as unknown as Buffer;
 						}
 
-						responseData = await client.ossFileTransfer.upload(
-							bucketKey,
-							objectKey,
-							fileBuffer,
-							accessToken,
-							new AbortController(),
-						);
+						responseData = await client.uploadObject(bucketKey, objectKey, fileBuffer);
 					} else if (operation === 'download') {
 						const objectKey = this.getNodeParameter('objectKey', i) as string;
 						const downloadAsFile = this.getNodeParameter('downloadAsFile', i, false) as boolean;
 
 						if (downloadAsFile) {
 							const filePath = this.getNodeParameter('filePath', i) as string;
-							await client.ossFileTransfer.download(bucketKey, objectKey, accessToken, filePath);
+							await client.downloadObject(bucketKey, objectKey, filePath);
 							responseData = { success: true, filePath };
 						} else {
-							const stream = await client.objectApi.signedS3Download(
-								accessToken,
-								bucketKey,
-								objectKey,
-							);
-							responseData = { signedUrl: stream };
+							const stream = await client.downloadObject(bucketKey, objectKey);
+							responseData = { stream };
 						}
 					} else if (operation === 'copy') {
 						const objectKey = this.getNodeParameter('objectKey', i) as string;
