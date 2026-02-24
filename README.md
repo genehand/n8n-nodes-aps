@@ -52,4 +52,5 @@ Configure credentials in n8n with your APS Client ID and Client Secret from the 
 ## Resources
 
 - [APS API Documentation](https://aps.autodesk.com/developer/documentation)
-- [n8n community nodes documentation](https://docs.n8n.io/integrations/#community-nodes)
+- [APS SDK for Node.js](https://github.com/autodesk-platform-services/aps-sdk-node)
+- [n8n-aps-nodes](https://github.com/chuongmep/n8n-aps-nodes) - Thanks to chuongmep for the original implementation
