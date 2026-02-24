@@ -202,7 +202,7 @@ export class ApsOss implements INodeType {
 				displayOptions: {
 					show: {
 						resource: ['object'],
-						operation: ['getDetails', 'delete', 'createSignedUrl'],
+						operation: ['getDetails', 'delete', 'createSignedUrl', 'download'],
 					},
 				},
 			},

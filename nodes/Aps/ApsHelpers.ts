@@ -75,8 +75,9 @@ export function simplifyJsonApiEntity(
 	const { id, type, attributes, links, ...rest } = entity;
 	const simplified: Record<string, unknown> = {};
 
-	// Check if this is a JSON:API formatted entity
-	const isJsonApiFormat = id !== undefined || type !== undefined || attributes !== undefined;
+	// Check if this is a JSON:API formatted entity (must have id+type+attributes structure)
+	// Note: Some APIs return plain objects with 'type' field that are NOT JSON:API format
+	const isJsonApiFormat = attributes !== undefined || (id !== undefined && type !== undefined);
 
 	if (isJsonApiFormat) {
 		// Handle JSON:API format
