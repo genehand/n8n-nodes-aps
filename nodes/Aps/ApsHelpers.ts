@@ -8,6 +8,10 @@ interface JsonApiEntity {
 	id?: string;
 	type?: string;
 	attributes?: Record<string, unknown>;
+	links?: {
+		self?: { href?: string } | string;
+		href?: string;
+	};
 	[key: string]: unknown;
 }
 
@@ -60,25 +64,36 @@ export function createModelDerivativeClient(accessToken: string): ModelDerivativ
 
 /**
  * Simplify JSON:API entity by flattening attributes into the main object
- * Transforms { id, type, attributes: { ... } } to { id, type, ...attributes }
+ * Transforms { id, type, attributes: { ... } } to { id, type, href, ...attributes }
  */
 export function simplifyJsonApiEntity(
 	entity: JsonApiEntity | null,
 ): Record<string, unknown> | null {
 	if (!entity) return null;
 
-	const { id, type, attributes, ...rest } = entity;
+	const { id, type, attributes, links } = entity;
 	const simplified: Record<string, unknown> = {};
 
 	if (id !== undefined) simplified.id = id;
 	if (type !== undefined) simplified.type = type;
 
+	// Extract href from links
+	let href: string | undefined;
+	if (links?.self) {
+		if (typeof links.self === 'string') {
+			href = links.self;
+		} else if (typeof links.self === 'object' && 'href' in links.self) {
+			href = links.self.href;
+		}
+	}
+	if (!href && links?.href) {
+		href = links.href;
+	}
+	if (href !== undefined) simplified.href = href;
+
 	if (attributes && typeof attributes === 'object') {
 		Object.assign(simplified, attributes);
 	}
-
-	// Merge any other top-level properties
-	Object.assign(simplified, rest);
 
 	return simplified;
 }
@@ -117,6 +132,18 @@ export function simplifyJsonApiResponse(response: JsonApiResponse | unknown): un
 }
 
 /**
+ * Extract the actual content from SDK response (handles ApiResponse wrapper)
+ */
+function extractResponseContent(data: unknown): unknown {
+	// Handle SDK ApiResponse wrapper which has 'content' and 'response' properties
+	// The 'response' property contains circular references (req/res), so we only extract 'content'
+	if (data && typeof data === 'object' && 'content' in data && !Array.isArray(data)) {
+		return (data as { content: unknown }).content;
+	}
+	return data;
+}
+
+/**
  * Handle paginated response - returns array or single item based on simplify setting
  */
 export function handlePaginatedResponse(
@@ -124,12 +151,15 @@ export function handlePaginatedResponse(
 	splitIntoItems: boolean,
 	simplify: boolean,
 ): IDataObject | IDataObject[] {
-	const processed = simplify ? simplifyJsonApiResponse(data) : data;
+	// First extract content from SDK wrapper if present
+	const content = extractResponseContent(data);
+	const processed = simplify ? simplifyJsonApiResponse(content) : content;
 
-	// If splitIntoItems is true and we have an array, return as array for n8n to split
-	if (splitIntoItems && processed && typeof processed === 'object') {
+	// If we have a wrapped response with data array, extract just the data
+	if (processed && typeof processed === 'object') {
 		const typedProcessed = processed as JsonApiResponse;
 		if (typedProcessed.data && Array.isArray(typedProcessed.data)) {
+			// Always return just the data array (flattened), not the wrapper
 			return typedProcessed.data as IDataObject[];
 		}
 	}

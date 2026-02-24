@@ -3,7 +3,7 @@ import type { ICredentialType, INodeProperties, Icon, ICredentialTestRequest } f
 export class ApsClientCredentialsOAuth2Api implements ICredentialType {
 	name = 'apsClientCredentialsOAuth2Api';
 
-	displayName = 'APS Client Credentials OAuth2 API';
+	displayName = 'Autodesk APS - Client Credentials OAuth2 API';
 
 	documentationUrl = 'https://aps.autodesk.com/en/docs/oauth/v2/developers_guide/overview/';
 
@@ -36,6 +36,7 @@ export class ApsClientCredentialsOAuth2Api implements ICredentialType {
 			name: 'tokenType',
 			type: 'hidden',
 			default: 'Bearer',
+			typeOptions: { password: true },
 		},
 		{
 			displayName: 'Authentication',
