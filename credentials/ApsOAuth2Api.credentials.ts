@@ -1,4 +1,4 @@
-import type { ICredentialType, INodeProperties, Icon } from 'n8n-workflow';
+import type { ICredentialType, INodeProperties, Icon, ICredentialTestRequest } from 'n8n-workflow';
 
 export class ApsOAuth2Api implements ICredentialType {
 	name = 'apsOAuth2Api';
@@ -12,12 +12,6 @@ export class ApsOAuth2Api implements ICredentialType {
 	extends = ['oAuth2Api'];
 
 	properties: INodeProperties[] = [
-		{
-			displayName: 'Grant Type',
-			name: 'grantType',
-			type: 'hidden',
-			default: 'authorizationCode',
-		},
 		{
 			displayName: 'Authorization URL',
 			name: 'authUrl',
@@ -33,22 +27,29 @@ export class ApsOAuth2Api implements ICredentialType {
 			required: true,
 		},
 		{
+			displayName: 'Token Type',
+			name: 'tokenType',
+			type: 'hidden',
+			default: 'Bearer',
+		},
+		{
 			displayName: 'Scope',
 			name: 'scope',
 			type: 'hidden',
 			default: 'data:read data:write data:create account:read',
 		},
 		{
-			displayName: 'Auth URI Query Parameters',
-			name: 'authQueryParameters',
-			type: 'hidden',
-			default: '',
-		},
-		{
 			displayName: 'Authentication',
 			name: 'authentication',
 			type: 'hidden',
-			default: 'body',
+			default: 'header',
 		},
 	];
+
+	test: ICredentialTestRequest = {
+		request: {
+			baseURL: 'https://developer.api.autodesk.com',
+			url: '/oss/v2/buckets',
+		},
+	};
 }
