@@ -60,7 +60,7 @@ export class ApsOss implements INodeType {
 					{
 						name: 'Get Many',
 						value: 'getAll',
-						action: 'Get many buckets',
+						action: 'List buckets',
 					},
 					{
 						name: 'Get',
@@ -99,7 +99,7 @@ export class ApsOss implements INodeType {
 					{
 						name: 'Create Signed URL',
 						value: 'createSignedUrl',
-						action: 'Create signed URL',
+						action: 'Generate OSS signed URL',
 					},
 					{
 						name: 'Delete',
@@ -109,22 +109,22 @@ export class ApsOss implements INodeType {
 					{
 						name: 'Download',
 						value: 'download',
-						action: 'Download an object',
+						action: 'Download an object using signed URL',
 					},
 					{
-						name: 'Get Details',
+						name: 'Get',
 						value: 'getDetails',
 						action: 'Get object details',
 					},
 					{
 						name: 'Get Many',
 						value: 'getAll',
-						action: 'Get many objects',
+						action: 'List objects',
 					},
 					{
 						name: 'Upload',
 						value: 'upload',
-						action: 'Upload an object',
+						action: 'Upload an object using signed URL',
 					},
 				],
 				default: 'copy',

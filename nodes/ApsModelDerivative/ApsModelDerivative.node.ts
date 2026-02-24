@@ -79,7 +79,7 @@ export class ApsModelDerivative implements INodeType {
 					{
 						name: 'Start Translation',
 						value: 'startTranslation',
-						action: 'Start translation job',
+						action: 'Create a translation job',
 					},
 				],
 				default: 'startTranslation',
@@ -98,12 +98,12 @@ export class ApsModelDerivative implements INodeType {
 					{
 						name: 'Get',
 						value: 'get',
-						action: 'Get manifest',
+						action: 'Fetch a manifest',
 					},
 					{
 						name: 'Delete',
 						value: 'delete',
-						action: 'Delete manifest',
+						action: 'Delete a manifest',
 					},
 				],
 				default: 'get',
@@ -122,17 +122,17 @@ export class ApsModelDerivative implements INodeType {
 					{
 						name: 'Get Model Views',
 						value: 'getModelViews',
-						action: 'Get model views',
+						action: 'List model views',
 					},
 					{
 						name: 'Get Object Tree',
 						value: 'getObjectTree',
-						action: 'Get object tree',
+						action: 'Fetch an object tree',
 					},
 					{
 						name: 'Get All Properties',
 						value: 'getAllProperties',
-						action: 'Get all properties',
+						action: 'Fetch all properties',
 					},
 					{
 						name: 'Fetch Specific Properties',
@@ -175,7 +175,7 @@ export class ApsModelDerivative implements INodeType {
 					{
 						name: 'Get',
 						value: 'get',
-						action: 'Get thumbnail',
+						action: 'Get a thumbnail',
 					},
 				],
 				default: 'get',
@@ -192,9 +192,9 @@ export class ApsModelDerivative implements INodeType {
 				},
 				options: [
 					{
-						name: 'Get Supported Formats',
+						name: 'Get',
 						value: 'getFormats',
-						action: 'Get supported formats',
+						action: 'List supported formats',
 					},
 				],
 				default: 'getFormats',

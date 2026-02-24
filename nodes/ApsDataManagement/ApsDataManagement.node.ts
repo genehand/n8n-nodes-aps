@@ -74,7 +74,7 @@ export class ApsDataManagement implements INodeType {
 					{
 						name: 'Get Many',
 						value: 'getAll',
-						action: 'Get many hubs',
+						action: 'List hubs',
 					},
 					{
 						name: 'Get',
@@ -98,7 +98,7 @@ export class ApsDataManagement implements INodeType {
 					{
 						name: 'Get Many',
 						value: 'getAll',
-						action: 'Get many projects',
+						action: 'Get projects',
 					},
 					{
 						name: 'Get',
@@ -108,7 +108,7 @@ export class ApsDataManagement implements INodeType {
 					{
 						name: 'Get Top Folders',
 						value: 'getTopFolders',
-						action: 'Get project top folders',
+						action: 'List top level project folders',
 					},
 				],
 				default: 'getAll',
@@ -132,12 +132,12 @@ export class ApsDataManagement implements INodeType {
 					{
 						name: 'Get Contents',
 						value: 'getContents',
-						action: 'Get folder contents',
+						action: 'List folder contents',
 					},
 					{
 						name: 'Search',
 						value: 'search',
-						action: 'Search folder',
+						action: 'List folder and subfolder contents',
 					},
 					{
 						name: 'Create',

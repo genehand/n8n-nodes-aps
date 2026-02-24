@@ -77,6 +77,42 @@ import type { ICredentialType, INodeProperties } from 'n8n-workflow';
 | Files              | PascalCase | `ApsDataManagement.node.ts`         |
 | Properties         | camelCase  | `displayName`, `operation`          |
 
+### Operation Naming Conventions
+
+When defining operation options for nodes, use the following conventions based on the APS SDK `@summary` comments:
+
+**Option `name` values:**
+
+- Use n8n standard names: `Get`, `Get Many`, `Create`, `Delete`, `Update`, etc.
+- For unique operations within a resource, use descriptive names like `Get Top Folders`, `Get Contents`, `Start Translation`
+
+**Option `action` values:**
+
+- Use sentence case (lowercase except first word)
+- Derive from SDK `@summary` comments in the APS SDK files
+- Examples from SDK:
+  - `@summary List Hubs` → `action: 'List hubs'`
+  - `@summary Get a Hub` → `action: 'Get a hub'`
+  - `@summary Create Bucket` → `action: 'Create a bucket'`
+  - `@summary Fetch Manifest` → `action: 'Fetch a manifest'`
+  - `@summary List Model Views` → `action: 'List model views'`
+
+**Pattern mapping:**
+
+| SDK @summary Pattern | action Value Example     |
+| -------------------- | ------------------------ |
+| Get/List {Resource}  | `Get a hub`, `List hubs` |
+| Create {Resource}    | `Create a bucket`        |
+| Delete {Resource}    | `Delete a bucket`        |
+| Fetch {Resource}     | `Fetch a manifest`       |
+| {Verb} {Resource}    | `Start translation job`  |
+
+**Important:** n8n linting rules require:
+
+- `name: 'Get Many'` for list operations (not 'List')
+- Sentence case for all `action` values
+- Unique `name` values within each resource's operation options
+
 ### Error Handling
 
 **Always use this pattern in execute methods:**
