@@ -5,7 +5,7 @@ import {
 	INodeTypeDescription,
 } from 'n8n-workflow';
 import { createModelDerivativeClient, handlePaginatedResponse } from '../Aps/ApsHelpers';
-import { Region } from '@aps_sdk/model-derivative';
+import { Region, SpecificPropertiesPayload } from '@aps_sdk/model-derivative';
 
 export class ApsModelDerivative implements INodeType {
 	description: INodeTypeDescription = {
@@ -318,6 +318,69 @@ export class ApsModelDerivative implements INodeType {
 				},
 			},
 			{
+				displayName: 'Query Type',
+				name: 'queryType',
+				type: 'options',
+				options: [
+					{ name: 'Begins With ($Prefix)', value: '$prefix' },
+					{ name: 'Between', value: 'between' },
+					{ name: 'Contains', value: 'contains' },
+					{ name: 'Equals To ($Eq)', value: '$eq' },
+					{ name: 'Greater Than', value: 'greaterThan' },
+					{ name: 'Less Than', value: 'lessThan' },
+					{ name: 'Match ID ($In)', value: '$in' },
+				],
+				default: '$eq',
+				description: 'The type of query to perform',
+				displayOptions: {
+					show: {
+						resource: ['metadata'],
+						operation: ['fetchSpecificProperties'],
+					},
+				},
+			},
+			{
+				displayName: 'Query Attribute',
+				name: 'queryAttribute',
+				type: 'string',
+				default: 'name',
+				description:
+					'The attribute to query. Use "name" or "objectid" for basic queries, or a full property path like "properties.Materials.Material Name" for property searches (required for Contains).',
+				displayOptions: {
+					show: {
+						resource: ['metadata'],
+						operation: ['fetchSpecificProperties'],
+					},
+				},
+			},
+			{
+				displayName: 'Query Value',
+				name: 'queryValue',
+				type: 'string',
+				default: '',
+				description: 'The value to match. For Match ID, use comma-separated values like: 1, 2, 3.',
+				displayOptions: {
+					show: {
+						resource: ['metadata'],
+						operation: ['fetchSpecificProperties'],
+					},
+				},
+			},
+			{
+				displayName: 'Fields',
+				name: 'fields',
+				type: 'json',
+				default: '["properties"]',
+				description:
+					'Which properties to return, for example: ["properties.category.*"] or ["properties.*.property"]',
+				displayOptions: {
+					show: {
+						resource: ['metadata'],
+						operation: ['fetchSpecificProperties'],
+					},
+				},
+			},
+			{
 				displayName: 'Region',
 				name: 'region',
 				type: 'options',
@@ -533,14 +596,60 @@ export class ApsModelDerivative implements INodeType {
 						});
 					} else if (operation === 'fetchSpecificProperties') {
 						const modelGuid = this.getNodeParameter('modelGuid', i) as string;
-						// Fetch all properties using a match-all query (match objects with any name)
+						const queryType = this.getNodeParameter('queryType', i) as string;
+						const queryAttribute = this.getNodeParameter('queryAttribute', i) as string;
+						const queryValue = this.getNodeParameter('queryValue', i) as string;
+						const fieldsJson = this.getNodeParameter('fields', i, '') as string;
+
+						// Build the query object
+						const query: Record<string, unknown> = {};
+						if (queryType === '$eq' || queryType === '$prefix' || queryType === '$in') {
+							// For $in, we need to handle multiple values
+							if (queryType === '$in') {
+								// Split by comma for multiple values
+								const values = queryValue.split(',').map((v) => v.trim());
+								query[queryType] = [queryAttribute, ...values];
+							} else {
+								query[queryType] = [queryAttribute, queryValue];
+							}
+						} else if (queryType === 'contains') {
+							query['$contains'] = [queryAttribute, queryValue];
+						} else if (queryType === 'between') {
+							// Parse value as array for between [min, max]
+							const values = queryValue.split(',').map((v) => {
+								const num = parseFloat(v.trim());
+								return isNaN(num) ? v.trim() : num;
+							});
+							query['$between'] = [queryAttribute, values[0], values[1]];
+						} else if (queryType === 'greaterThan') {
+							const num = parseFloat(queryValue);
+							query['$gt'] = [queryAttribute, isNaN(num) ? queryValue : num];
+						} else if (queryType === 'lessThan') {
+							const num = parseFloat(queryValue);
+							query['$lt'] = [queryAttribute, isNaN(num) ? queryValue : num];
+						}
+
+						// Build the payload
+						const payload = {
+							query,
+						} as Record<string, unknown>;
+
+						// Parse and add fields if provided
+						if (fieldsJson) {
+							try {
+								payload.fields = JSON.parse(fieldsJson) as Record<string, unknown>;
+							} catch {
+								// If parsing fails, ignore fields
+							}
+						}
+
 						responseData = await client.fetchSpecificProperties(
 							urn,
 							modelGuid,
+							payload as unknown as SpecificPropertiesPayload,
 							{
-								query: { $eq: ['name', '*'] },
+								region,
 							},
-							{ region },
 						);
 					}
 				} else if (resource === 'derivative') {

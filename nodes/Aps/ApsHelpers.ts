@@ -18,11 +18,28 @@ class N8nAuthenticationProvider implements IAuthenticationProvider {
 		const credentials = (await this.ctx.getCredentials(
 			this.credentialName,
 		)) as ICredentialDataDecryptedObject;
-		const oauthData = credentials.oauthTokenData as { access_token?: string } | undefined;
+		const oauthData = credentials.oauthTokenData as
+			| { access_token?: string; expires_at?: number }
+			| undefined;
 		const accessToken = oauthData?.access_token;
 
 		if (!accessToken) {
 			throw new Error(`No access token found in credentials: ${this.credentialName}`);
+		}
+
+		// Check if token is expired or about to expire (within 60 seconds)
+		const expiresAt = oauthData?.expires_at;
+		if (expiresAt) {
+			const expiresAtMs = expiresAt * 1000; // Convert to milliseconds
+			const now = Date.now();
+			const timeUntilExpiry = expiresAtMs - now;
+
+			if (timeUntilExpiry < 60000) {
+				// Less than 60 seconds until expiry
+				throw new Error(
+					'Access token has expired or is about to expire.'
+				);
+			}
 		}
 
 		return accessToken;
