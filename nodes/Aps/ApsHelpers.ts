@@ -172,6 +172,12 @@ export function handlePaginatedResponse(
 ): IDataObject | IDataObject[] {
 	// First extract content from SDK wrapper if present
 	const content = extractResponseContent(data);
+
+	// Handle null/undefined responses (e.g., successful delete operations)
+	if (content === null || content === undefined) {
+		return { success: true };
+	}
+
 	const processed = simplify ? simplifyJsonApiResponse(content) : content;
 
 	// If we have a wrapped response with data array, extract just the data

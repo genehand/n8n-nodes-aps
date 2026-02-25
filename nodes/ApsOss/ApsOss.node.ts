@@ -6,6 +6,8 @@ import {
 	NodeOperationError,
 } from 'n8n-workflow';
 import { getAccessToken, createOssClient, handlePaginatedResponse } from '../Aps/ApsHelpers';
+import { createWriteStream, existsSync, unlinkSync } from 'fs';
+import https from 'https';
 import { Region } from '@aps_sdk/oss';
 
 export class ApsOss implements INodeType {
@@ -410,13 +412,55 @@ export class ApsOss implements INodeType {
 						const objectKey = this.getNodeParameter('objectKey', i) as string;
 						const downloadAsFile = this.getNodeParameter('downloadAsFile', i, false) as boolean;
 
+						// Workaround for SDK bug: downloadObject has off-by-one error in range calculation
+						// Get signed S3 URL and download directly
+						const signedUrlResponse = await client.objectApi.signedS3Download(
+							accessToken,
+							bucketKey,
+							objectKey,
+						);
+
+						if (signedUrlResponse.content.status !== 'complete') {
+							throw new NodeOperationError(
+								this.getNode(),
+								`File not available for download yet. Status: ${signedUrlResponse.content.status}`,
+							);
+						}
+
+						const downloadUrl = signedUrlResponse.content.url;
+
 						if (downloadAsFile) {
 							const filePath = this.getNodeParameter('filePath', i) as string;
-							await client.downloadObject(bucketKey, objectKey, filePath);
+							// Delete file if it exists to prevent append behavior
+							if (existsSync(filePath)) {
+								unlinkSync(filePath);
+							}
+
+							// Download file using Node's https module to avoid SDK bug
+							await new Promise<void>((resolve, reject) => {
+								const fileStream = createWriteStream(filePath);
+								https
+									.get(downloadUrl, (response) => {
+										if (response.statusCode !== 200) {
+											reject(new Error(`Download failed with status code: ${response.statusCode}`));
+											return;
+										}
+										response.pipe(fileStream);
+										fileStream.on('finish', () => {
+											fileStream.close();
+											resolve();
+										});
+									})
+									.on('error', (error) => {
+										unlinkSync(filePath);
+										reject(error);
+									});
+							});
+
 							responseData = { success: true, filePath };
 						} else {
-							const stream = await client.downloadObject(bucketKey, objectKey);
-							responseData = { stream };
+							// Return the download URL for streaming access
+							responseData = { downloadUrl, size: signedUrlResponse.content.size };
 						}
 					} else if (operation === 'copy') {
 						const objectKey = this.getNodeParameter('objectKey', i) as string;
