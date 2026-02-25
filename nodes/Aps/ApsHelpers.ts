@@ -1,8 +1,33 @@
 import type { IExecuteFunctions, ICredentialDataDecryptedObject, IDataObject } from 'n8n-workflow';
-import { StaticAuthenticationProvider } from '@aps_sdk/autodesk-sdkmanager';
+import type { IAuthenticationProvider } from '@aps_sdk/autodesk-sdkmanager';
 import { OssClient } from '@aps_sdk/oss';
 import { DataManagementClient } from '@aps_sdk/data-management';
 import { ModelDerivativeClient } from '@aps_sdk/model-derivative';
+
+/**
+ * Custom authentication provider that fetches tokens from n8n credentials
+ * This allows n8n to automatically refresh expired tokens
+ */
+class N8nAuthenticationProvider implements IAuthenticationProvider {
+	constructor(
+		private ctx: IExecuteFunctions,
+		private credentialName: string,
+	) {}
+
+	async getAccessToken(): Promise<string> {
+		const credentials = (await this.ctx.getCredentials(
+			this.credentialName,
+		)) as ICredentialDataDecryptedObject;
+		const oauthData = credentials.oauthTokenData as { access_token?: string } | undefined;
+		const accessToken = oauthData?.access_token;
+
+		if (!accessToken) {
+			throw new Error(`No access token found in credentials: ${this.credentialName}`);
+		}
+
+		return accessToken;
+	}
+}
 
 interface JsonApiEntity {
 	id?: string;
@@ -41,24 +66,30 @@ export async function getAccessToken(
 /**
  * Create OSS client with authentication provider
  */
-export function createOssClient(accessToken: string): OssClient {
-	const authProvider = new StaticAuthenticationProvider(accessToken);
+export function createOssClient(ctx: IExecuteFunctions, credentialName: string): OssClient {
+	const authProvider = new N8nAuthenticationProvider(ctx, credentialName);
 	return new OssClient({ authenticationProvider: authProvider });
 }
 
 /**
  * Create Data Management client with authentication provider
  */
-export function createDataManagementClient(accessToken: string): DataManagementClient {
-	const authProvider = new StaticAuthenticationProvider(accessToken);
+export function createDataManagementClient(
+	ctx: IExecuteFunctions,
+	credentialName: string,
+): DataManagementClient {
+	const authProvider = new N8nAuthenticationProvider(ctx, credentialName);
 	return new DataManagementClient({ authenticationProvider: authProvider });
 }
 
 /**
  * Create Model Derivative client with authentication provider
  */
-export function createModelDerivativeClient(accessToken: string): ModelDerivativeClient {
-	const authProvider = new StaticAuthenticationProvider(accessToken);
+export function createModelDerivativeClient(
+	ctx: IExecuteFunctions,
+	credentialName: string,
+): ModelDerivativeClient {
+	const authProvider = new N8nAuthenticationProvider(ctx, credentialName);
 	return new ModelDerivativeClient({ authenticationProvider: authProvider });
 }
 

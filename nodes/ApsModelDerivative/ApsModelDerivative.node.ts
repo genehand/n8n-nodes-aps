@@ -4,11 +4,7 @@ import {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import {
-	getAccessToken,
-	createModelDerivativeClient,
-	handlePaginatedResponse,
-} from '../Aps/ApsHelpers';
+import { createModelDerivativeClient, handlePaginatedResponse } from '../Aps/ApsHelpers';
 import { Region } from '@aps_sdk/model-derivative';
 
 export class ApsModelDerivative implements INodeType {
@@ -470,8 +466,7 @@ export class ApsModelDerivative implements INodeType {
 		const simplify = this.getNodeParameter('simplify', 0, true) as boolean;
 		const splitIntoItems = this.getNodeParameter('splitIntoItems', 0, false) as boolean;
 
-		const accessToken = await getAccessToken(this, 'apsClientCredentialsOAuth2Api');
-		const client = createModelDerivativeClient(accessToken);
+		const client = createModelDerivativeClient(this, 'apsClientCredentialsOAuth2Api');
 
 		for (let i = 0; i < items.length; i++) {
 			try {
@@ -483,11 +478,7 @@ export class ApsModelDerivative implements INodeType {
 						const outputFormat = this.getNodeParameter('outputFormat', i) as string;
 						const region = this.getNodeParameter('region', i) as Region;
 
-						responseData = await client.jobsApi.startJob(
-							accessToken,
-							undefined,
-							undefined,
-							region,
+						responseData = await client.startJob(
 							{
 								input: { urn },
 								output: {
@@ -508,6 +499,7 @@ export class ApsModelDerivative implements INodeType {
 									],
 								},
 							},
+							{ region },
 						);
 					}
 				} else if (resource === 'manifest') {
@@ -515,61 +507,40 @@ export class ApsModelDerivative implements INodeType {
 					const region = this.getNodeParameter('region', i) as Region;
 
 					if (operation === 'get') {
-						responseData = await client.manifestApi.getManifest(
-							accessToken,
-							urn,
-							undefined,
-							region,
-						);
+						responseData = await client.getManifest(urn, { region });
 					} else if (operation === 'delete') {
-						responseData = await client.manifestApi.deleteManifest(accessToken, urn, region);
+						responseData = await client.deleteManifest(urn, { region });
 					}
 				} else if (resource === 'metadata') {
 					const urn = this.getNodeParameter('urn', i) as string;
 					const region = this.getNodeParameter('region', i) as Region;
 
 					if (operation === 'getModelViews') {
-						responseData = await client.metadataApi.getModelViews(
-							accessToken,
-							urn,
-							undefined,
-							region,
-						);
+						responseData = await client.getModelViews(urn, { region });
 					} else if (operation === 'getObjectTree') {
 						const modelGuid = this.getNodeParameter('modelGuid', i) as string;
 						const forceget = this.getNodeParameter('forceget', i, false) as boolean;
-						responseData = await client.metadataApi.getObjectTree(
-							accessToken,
-							urn,
-							modelGuid,
-							undefined,
+						responseData = await client.getObjectTree(urn, modelGuid, {
 							region,
-							undefined,
-							undefined,
-							forceget ? 'true' : undefined,
-						);
+							forceget: forceget ? 'true' : undefined,
+						});
 					} else if (operation === 'getAllProperties') {
 						const modelGuid = this.getNodeParameter('modelGuid', i) as string;
 						const forceget = this.getNodeParameter('forceget', i, false) as boolean;
-						responseData = await client.metadataApi.getAllProperties(
-							accessToken,
-							urn,
-							modelGuid,
-							undefined,
-							undefined,
-							undefined,
+						responseData = await client.getAllProperties(urn, modelGuid, {
 							region,
-							undefined,
-							forceget ? 'true' : undefined,
-						);
+							forceget: forceget ? 'true' : undefined,
+						});
 					} else if (operation === 'fetchSpecificProperties') {
 						const modelGuid = this.getNodeParameter('modelGuid', i) as string;
-						responseData = await client.metadataApi.fetchSpecificProperties(
-							accessToken,
+						// Fetch all properties using a match-all query (match objects with any name)
+						responseData = await client.fetchSpecificProperties(
 							urn,
 							modelGuid,
-							undefined,
-							region,
+							{
+								query: { $eq: ['name', '*'] },
+							},
+							{ region },
 						);
 					}
 				} else if (resource === 'derivative') {
@@ -577,14 +548,7 @@ export class ApsModelDerivative implements INodeType {
 						const urn = this.getNodeParameter('urn', i) as string;
 						const derivativeUrn = this.getNodeParameter('derivativeUrn', i) as string;
 						const region = this.getNodeParameter('region', i) as Region;
-						responseData = await client.derivativesApi.getDerivativeUrl(
-							accessToken,
-							derivativeUrn,
-							urn,
-							undefined,
-							undefined,
-							region,
-						);
+						responseData = await client.getDerivativeUrl(derivativeUrn, urn, { region });
 					}
 				} else if (resource === 'thumbnail') {
 					if (operation === 'get') {
@@ -592,17 +556,15 @@ export class ApsModelDerivative implements INodeType {
 						const width = this.getNodeParameter('width', i) as number;
 						const height = this.getNodeParameter('height', i) as number;
 						const region = this.getNodeParameter('region', i) as Region;
-						responseData = await client.thumbnailsApi.getThumbnail(
-							accessToken,
-							urn,
+						responseData = await client.getThumbnail(urn, {
 							region,
-							width as 100 | 200 | 400,
-							height as 100 | 200 | 400,
-						);
+							width: width as 100 | 200 | 400,
+							height: height as 100 | 200 | 400,
+						});
 					}
 				} else if (resource === 'informational') {
 					if (operation === 'getFormats') {
-						responseData = await client.informationalApi.getFormats(accessToken);
+						responseData = await client.getFormats();
 					}
 				}
 

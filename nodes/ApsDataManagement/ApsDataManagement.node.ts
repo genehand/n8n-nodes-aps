@@ -4,11 +4,7 @@ import {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import {
-	getAccessToken,
-	createDataManagementClient,
-	handlePaginatedResponse,
-} from '../Aps/ApsHelpers';
+import { createDataManagementClient, handlePaginatedResponse } from '../Aps/ApsHelpers';
 
 export class ApsDataManagement implements INodeType {
 	description: INodeTypeDescription = {
@@ -378,8 +374,7 @@ export class ApsDataManagement implements INodeType {
 		const simplify = this.getNodeParameter('simplify', 0, true) as boolean;
 		const splitIntoItems = this.getNodeParameter('splitIntoItems', 0, false) as boolean;
 
-		const accessToken = await getAccessToken(this, 'apsOAuth2Api');
-		const client = createDataManagementClient(accessToken);
+		const client = createDataManagementClient(this, 'apsOAuth2Api');
 
 		for (let i = 0; i < items.length; i++) {
 			try {
@@ -387,52 +382,41 @@ export class ApsDataManagement implements INodeType {
 
 				if (resource === 'hub') {
 					if (operation === 'getAll') {
-						responseData = await client.hubsApi.getHubs(accessToken);
+						responseData = await client.getHubs();
 					} else if (operation === 'get') {
 						const hubId = this.getNodeParameter('hubId', i) as string;
-						responseData = await client.hubsApi.getHub(accessToken, hubId);
+						responseData = await client.getHub(hubId);
 					}
 				} else if (resource === 'project') {
 					const hubId = this.getNodeParameter('hubId', i) as string;
 					if (operation === 'getAll') {
-						responseData = await client.projectsApi.getHubProjects(accessToken, hubId);
+						responseData = await client.getHubProjects(hubId);
 					} else if (operation === 'get') {
 						const projectId = this.getNodeParameter('projectId', i) as string;
-						responseData = await client.projectsApi.getProject(accessToken, hubId, projectId);
+						responseData = await client.getProject(hubId, projectId);
 					} else if (operation === 'getTopFolders') {
 						const projectId = this.getNodeParameter('projectId', i) as string;
-						responseData = await client.projectsApi.getProjectTopFolders(
-							accessToken,
-							hubId,
-							projectId,
-						);
+						responseData = await client.getProjectTopFolders(hubId, projectId);
 					}
 				} else if (resource === 'folder') {
 					const projectId = this.getNodeParameter('projectId', i) as string;
 					if (operation === 'get') {
 						const folderId = this.getNodeParameter('folderId', i) as string;
-						responseData = await client.foldersApi.getFolder(accessToken, projectId, folderId);
+						responseData = await client.getFolder(projectId, folderId);
 					} else if (operation === 'getContents') {
 						const folderId = this.getNodeParameter('folderId', i) as string;
-						responseData = await client.foldersApi.getFolderContents(
-							accessToken,
-							projectId,
-							folderId,
-						);
+						responseData = await client.getFolderContents(projectId, folderId);
 					} else if (operation === 'search') {
 						const folderId = this.getNodeParameter('folderId', i) as string;
 						const filterFieldName = this.getNodeParameter('filterFieldName', i) as string;
-						responseData = await client.foldersApi.getFolderSearch(
-							accessToken,
-							projectId,
-							folderId,
+						responseData = await client.getFolderSearch(projectId, folderId, {
 							filterFieldName,
-						);
+						});
 					} else if (operation === 'create') {
 						// Create folder uses folders API
 						const folderName = this.getNodeParameter('folderName', i) as string;
 						const parentFolderId = this.getNodeParameter('parentFolderId', i) as string;
-						responseData = await client.foldersApi.createFolder(accessToken, projectId, undefined, {
+						responseData = await client.createFolder(projectId, {
 							jsonapi: { version: '1.0' },
 							data: {
 								type: 'folders',
@@ -455,17 +439,17 @@ export class ApsDataManagement implements INodeType {
 					const projectId = this.getNodeParameter('projectId', i) as string;
 					const itemId = this.getNodeParameter('itemId', i) as string;
 					if (operation === 'get') {
-						responseData = await client.itemsApi.getItem(accessToken, projectId, itemId);
+						responseData = await client.getItem(projectId, itemId);
 					} else if (operation === 'getVersions') {
-						responseData = await client.itemsApi.getItemVersions(accessToken, projectId, itemId);
+						responseData = await client.getItemVersions(projectId, itemId);
 					} else if (operation === 'getTip') {
-						responseData = await client.itemsApi.getItemTip(accessToken, projectId, itemId);
+						responseData = await client.getItemTip(projectId, itemId);
 					}
 				} else if (resource === 'version') {
 					const projectId = this.getNodeParameter('projectId', i) as string;
 					const versionId = this.getNodeParameter('versionId', i) as string;
 					if (operation === 'get') {
-						responseData = await client.versionsApi.getVersion(accessToken, projectId, versionId);
+						responseData = await client.getVersion(projectId, versionId);
 					}
 				}
 

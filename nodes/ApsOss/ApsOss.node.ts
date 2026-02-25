@@ -5,7 +5,7 @@ import {
 	INodeTypeDescription,
 	NodeOperationError,
 } from 'n8n-workflow';
-import { getAccessToken, createOssClient, handlePaginatedResponse } from '../Aps/ApsHelpers';
+import { createOssClient, handlePaginatedResponse } from '../Aps/ApsHelpers';
 import { createWriteStream, existsSync, unlinkSync } from 'fs';
 import https from 'https';
 import { Region } from '@aps_sdk/oss';
@@ -350,8 +350,7 @@ export class ApsOss implements INodeType {
 		const simplify = this.getNodeParameter('simplify', 0, true) as boolean;
 		const splitIntoItems = this.getNodeParameter('splitIntoItems', 0, false) as boolean;
 
-		const accessToken = await getAccessToken(this, 'apsClientCredentialsOAuth2Api');
-		const client = createOssClient(accessToken);
+		const client = createOssClient(this, 'apsClientCredentialsOAuth2Api');
 
 		for (let i = 0; i < items.length; i++) {
 			try {
@@ -360,38 +359,30 @@ export class ApsOss implements INodeType {
 				if (resource === 'bucket') {
 					if (operation === 'getAll') {
 						const region = this.getNodeParameter('region', i) as Region;
-						responseData = await client.bucketApi.getBuckets(accessToken, region);
+						responseData = await client.getBuckets({ region });
 					} else if (operation === 'get') {
 						const bucketKey = this.getNodeParameter('bucketKey', i) as string;
-						responseData = await client.bucketApi.getBucketDetails(accessToken, bucketKey);
+						responseData = await client.getBucketDetails(bucketKey);
 					} else if (operation === 'create') {
 						const region = this.getNodeParameter('region', i) as Region;
 						const bucketKey = this.getNodeParameter('bucketKey', i) as string;
 						const policyKey = this.getNodeParameter('policyKey', i) as string;
-						responseData = await client.bucketApi.createBucket(
-							accessToken,
-							{
-								bucketKey,
-								policyKey: policyKey as 'persistent' | 'temporary' | 'transient',
-							},
-							region,
-						);
+						responseData = await client.createBucket(region, {
+							bucketKey,
+							policyKey: policyKey as 'persistent' | 'temporary' | 'transient',
+						});
 					} else if (operation === 'delete') {
 						const bucketKey = this.getNodeParameter('bucketKey', i) as string;
-						responseData = await client.bucketApi.deleteBucket(accessToken, bucketKey);
+						responseData = await client.deleteBucket(bucketKey);
 					}
 				} else if (resource === 'object') {
 					const bucketKey = this.getNodeParameter('bucketKey', i) as string;
 
 					if (operation === 'getAll') {
-						responseData = await client.objectApi.getObjects(accessToken, bucketKey);
+						responseData = await client.getObjects(bucketKey);
 					} else if (operation === 'getDetails') {
 						const objectKey = this.getNodeParameter('objectKey', i) as string;
-						responseData = await client.objectApi.getObjectDetails(
-							accessToken,
-							bucketKey,
-							objectKey,
-						);
+						responseData = await client.getObjectDetails(bucketKey, objectKey);
 					} else if (operation === 'upload') {
 						const objectKey = this.getNodeParameter('objectKey', i) as string;
 						const binaryPropertyName = this.getNodeParameter('binaryPropertyName', i) as string;
@@ -414,20 +405,20 @@ export class ApsOss implements INodeType {
 
 						// Workaround for SDK bug: downloadObject has off-by-one error in range calculation
 						// Get signed S3 URL and download directly
-						const signedUrlResponse = await client.objectApi.signedS3Download(
-							accessToken,
-							bucketKey,
-							objectKey,
-						);
+						const signedUrlResponse = await client.signedS3Download(bucketKey, objectKey);
 
-						if (signedUrlResponse.content.status !== 'complete') {
+						if (signedUrlResponse.status !== 'complete') {
 							throw new NodeOperationError(
 								this.getNode(),
-								`File not available for download yet. Status: ${signedUrlResponse.content.status}`,
+								`File not available for download yet. Status: ${signedUrlResponse.status}`,
 							);
 						}
 
-						const downloadUrl = signedUrlResponse.content.url;
+						const downloadUrl = signedUrlResponse.url;
+
+						if (!downloadUrl) {
+							throw new NodeOperationError(this.getNode(), 'Download URL not available');
+						}
 
 						if (downloadAsFile) {
 							const filePath = this.getNodeParameter('filePath', i) as string;
@@ -460,32 +451,23 @@ export class ApsOss implements INodeType {
 							responseData = { success: true, filePath };
 						} else {
 							// Return the download URL for streaming access
-							responseData = { downloadUrl, size: signedUrlResponse.content.size };
+							responseData = { downloadUrl, size: signedUrlResponse.size };
 						}
 					} else if (operation === 'copy') {
 						const objectKey = this.getNodeParameter('objectKey', i) as string;
 						const newObjectKey = this.getNodeParameter('newObjectKey', i) as string;
-						responseData = await client.objectApi.copyTo(
-							accessToken,
-							bucketKey,
-							objectKey,
-							newObjectKey,
-						);
+						responseData = await client.copyTo(bucketKey, objectKey, newObjectKey);
 					} else if (operation === 'delete') {
 						const objectKey = this.getNodeParameter('objectKey', i) as string;
-						responseData = await client.objectApi.deleteObject(accessToken, bucketKey, objectKey);
+						responseData = await client.deleteObject(bucketKey, objectKey);
 					} else if (operation === 'createSignedUrl') {
 						const objectKey = this.getNodeParameter('objectKey', i) as string;
 						const access = this.getNodeParameter('access', i) as string;
 						const minutesExpiration = this.getNodeParameter('minutesExpiration', i) as number;
-						responseData = await client.objectApi.createSignedResource(
-							accessToken,
-							bucketKey,
-							objectKey,
-							access as 'Read' | 'Write' | 'ReadWrite',
-							false,
-							{ minutesExpiration },
-						);
+						responseData = await client.createSignedResource(bucketKey, objectKey, {
+							access: access as 'Read' | 'Write' | 'ReadWrite',
+							createSignedResource: { minutesExpiration },
+						});
 					}
 				}
 
