@@ -141,7 +141,7 @@ export class ApsOss implements INodeType {
 				displayOptions: {
 					show: {
 						resource: ['bucket'],
-						operation: ['get', 'delete'],
+						operation: ['create', 'get', 'delete'],
 					},
 				},
 			},
